@@ -9,6 +9,8 @@ There are cases where Qt.py is not handling incompatibility issues.
 - [QtGui.QRegExpValidator](#qtguiqregexpvalidator)
 - [QtWidgets.QHeaderView.setResizeMode](#qtwidgetsqheaderviewsetresizemode)
 - [QtWidgets.qApp](#qtwidgetsqapp)
+- [QtCompat.wrapInstance](#qtcompatwrapinstance)
+- [QtCore.qInstallMessageHandler](#qtcoreqinstallmessagehandler)
 
 <br>
 <br>
@@ -156,8 +158,10 @@ TypeError: bytes or ASCII string expected not 'NoneType'
 
 PySide cannot accept any arguments. In PyQt4, `QAction.triggered` signal requires a bool arg.
 
+**Note**: This is not included on our tests, as we cannot reproduce this using PyQt4 4.11.4, CY2017. It's likely that this issue persists in e.g. Maya version < 2017.
+
 ```python
-# PySide
+# PySide, untested
 >>> from Qt import QtCore, QtWidgets
 >>> obj = QtCore.QObject()
 >>> action = QtWidgets.QAction(obj)
@@ -170,7 +174,7 @@ TypeError: triggered() only accepts 0 arguments, 2 given!
 ```
 
 ```python
-# PyQt4
+# PyQt4, untested
 >>> from Qt import QtCore, QtWidgets
 >>> obj = QtCore.QObject()
 >>> action = QtWidgets.QAction(obj)
@@ -263,7 +267,7 @@ Use compatibility wrapper.
 >>> app = QtWidgets.QApplication(sys.argv)
 >>> view = QtWidgets.QTreeWidget()
 >>> header = view.header()
->>> QtCompat.setSectionResizeMode(header, QtWidgets.QHeaderView.Fixed)
+>>> QtCompat.QHeaderView.setSectionResizeMode(header, QtWidgets.QHeaderView.Fixed)
 ```
 
 Or a conditional.
@@ -280,6 +284,10 @@ Or a conditional.
 ...   header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 ```
 
+Note: Qt.QtCompat.setSectionResizeMode is a older way this was handled and has been left in for now, but this will likely be removed in the future.
+
+<br>
+<br>
 
 #### QtWidgets.qApp
 
@@ -307,3 +315,40 @@ Technically, there is no difference between the two, apart from more characters 
 >>> app == QtWidgets.QApplication.instance()
 True
 ```
+
+
+#### QtCompat.wrapInstance
+
+`QtCompat.wrapInstance` differs across `sip` and `shiboken` in subtle ways.
+
+**Note**: This is not included on our tests, as we cannot reproduce this using PySide2 (build commit date `2017-08-25`), CY2018. It's likely that this issue persists in e.g. Maya version < 2018.
+
+```python
+# PySide2, untested
+>>> from Qt import QtCompat, QtWidgets
+>>> app = QtWidgets.QApplication(sys.argv)
+>>> button = QtWidgets.QPushButton("Hello world")
+>>> button.setObjectName("MySpecialButton")
+>>> pointer = QtCompat.getCppPointer(button)
+>>> widget = QtCompat.wrapInstance(long(pointer))
+>>> assert isinstance(widget, QtWidgets.QWidget), widget
+>>> assert widget.objectName() == button.objectName()
+>>> widget == button
+False
+```
+
+```python
+# PyQt5
+>>> from Qt import QtCompat, QtWidgets
+>>> app = QtWidgets.QApplication(sys.argv)
+>>> button = QtWidgets.QPushButton("Hello world")
+>>> button.setObjectName("MySpecialButton")
+>>> pointer = QtCompat.getCppPointer(button)
+>>> widget = QtCompat.wrapInstance(long(pointer))
+>>> assert isinstance(widget, QtWidgets.QWidget), widget
+>>> assert widget.objectName() == button.objectName()
+>>> widget == button
+True
+```
+
+Note the `False` for PySide2 and `True` for PyQt5.
