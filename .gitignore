@@ -7,3 +7,9 @@ test_caveats.py
 # Development
 .vscode
 .idea
+
+/*.dblite
+/release
+/debug
+/eco
+/*.env.tmp
