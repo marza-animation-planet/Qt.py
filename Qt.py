@@ -1715,8 +1715,14 @@ def _install():
             _log("ImportError: Preferred binding '%s' not found." % name)
 
     if not found_binding:
-        # If not binding were found, throw this error
-        raise ImportError("No Qt binding were found.")
+        path = os.environ.get("QT_BINDING_FALLBACK_PATH", None)
+        if path and os.path.isdir(path):
+            sys.path.insert(0, path)
+            _install()
+            return
+        else:
+            # If not binding were found, throw this error
+            raise ImportError("No Qt binding were found.")
 
     # Install individual members
     for name, members in _common_members.items():
