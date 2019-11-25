@@ -1,7 +1,8 @@
-[![Build Status](https://travis-ci.org/mottosso/Qt.py.svg?branch=master)](https://travis-ci.org/mottosso/Qt.py) [![PyPI version](https://badge.fury.io/py/Qt.py.svg)](https://pypi.python.org/pypi/Qt.py)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/qt.py/badges/version.svg)](https://anaconda.org/conda-forge/qt.py)
+<img width=260 src=logo.svg>
 
-### Qt.py
+[![Build Status](https://travis-ci.org/mottosso/Qt.py.svg?branch=master)](https://travis-ci.org/mottosso/Qt.py) [![PyPI version](https://badge.fury.io/py/Qt.py.svg)](https://pypi.python.org/pypi/Qt.py)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/qt.py/badges/version.svg)](https://anaconda.org/conda-forge/qt.py) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Qt-py/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 
 Qt.py enables you to write software that runs on any of the 4 supported bindings - PySide2, PyQt5, PySide and PyQt4.
 
@@ -11,7 +12,7 @@ Qt.py enables you to write software that runs on any of the 4 supported bindings
 
 | Date     | Version   | Event
 |:---------|:----------|:----------
-| Dec 2017 | [1.1.0][] | Adds new test suite, new members
+| Jan 2018 | [1.1.0][] | Adds new test suite, new members
 | Mar 2017 | [1.0.0][] | Increased safety, **backwards incompatible**
 | Sep 2016 | [0.6.9][] | Stable release
 | Sep 2016 | [0.5.0][] | Alpha release of `--convert`
@@ -31,6 +32,7 @@ Qt.py enables you to write software that runs on any of the 4 supported bindings
 - [Dealing with Maya 2017 and PySide2](https://fredrikaverpil.github.io/2016/07/25/dealing-with-maya-2017-and-pyside2/)
 - [Vendoring Qt.py](https://fredrikaverpil.github.io/2017/05/04/vendoring-qt-py/)
 - [Udemy Course](https://www.udemy.com/python-for-maya/learn/v4/t/lecture/6027394)
+- [PythonBytes #77](https://pythonbytes.fm/episodes/show/77/you-don-t-have-to-be-a-workaholic-to-win) (Starts at 5:00)
 
 ##### Table of contents
 
@@ -149,6 +151,8 @@ Qt.py also provides compatibility wrappers for critical functionality that diffe
 | `translate(...)`        					| `function`  | Compatibility wrapper around [QCoreApplication.translate][]
 | `wrapInstance(addr=long, type=QObject)`   | `QObject`   | Wrapper around `shiboken2.wrapInstance` and PyQt equivalent
 | `getCppPointer(object=QObject)`           | `long`      | Wrapper around `shiboken2.getCppPointer` and PyQt equivalent
+| `isValid(object=QObject)`                 | `bool`      | Wrapper around `shiboken2.isValid` and PyQt equivalent
+| `dataChanged(topLeft=QModelIndex, bottomRight=QModelIndex, roles=[])` | `None` | Wrapper around `QtCore.QAbstractItemModel.dataChanged.emit`
 
 [QCoreApplication.translate]: https://doc.qt.io/qt-5/qcoreapplication.html#translate
 
@@ -381,25 +385,32 @@ Send us a pull-request with known problems here!
 Send us a pull-request with your studio here.
 
 - [Atomic Fiction](http://www.atomicfiction.com/)
-- [Industrial Brothers](http://industrialbrothers.com/)
-- [Moonbot Studios](http://moonbotstudios.com/)
-- [Sony Pictures Imageworks](http://www.imageworks.com/)
-- [Colorbleed](http://www.colorbleed.nl/)
-- [Method Studios](http://www.methodstudios.com/)
-- [Framestore](https://framestore.com)
-- [Weta Digital](https://www.wetafx.co.nz/)
-- [Disney Animation](https://www.disneyanimation.com/)
-- [Industriromantik](http://www.industriromantik.se/)
-- [Psyop](http://www.psyop.com/)
-- [ftrack](https://www.ftrack.com/)
-- [Fido](http://fido.se/)
 - [Bläck](http://www.blackstudios.se/)
-- [CGRU](http://cgru.info/)
-- [MPC](http://www.moving-picture.com)
-- [Rising Sun Pictures](https://rsp.com.au)
 - [Blur Studio](http://www.blur.com)
-- [Mikros Image](http://www.mikrosimage.com/)
+- [CGRU](http://cgru.info/)
+- [Colorbleed](http://www.colorbleed.nl/)
+- [Digital Domain](https://www.digitaldomain.com/)
+- [Disney Animation](https://www.disneyanimation.com/)
+- [Epic Games](https://www.epicgames.com/)
+- [Fido](http://fido.se/)
+- [Framestore](https://framestore.com)
+- [ftrack](https://www.ftrack.com/)
+- [Futureworks](http://futureworks.in/)
+- [Industrial Brothers](http://industrialbrothers.com/)
+- [Industriromantik](http://www.industriromantik.se/)
 - [Mackevision](http://www.mackevision.com/)
+- [Method Studios](http://www.methodstudios.com/)
+- [Mikros Image](http://www.mikrosimage.com/)
+- [Moonbot Studios](http://moonbotstudios.com/)
+- [MPC](http://www.moving-picture.com)
+- [Overmind Studios](https://www.overmind-studios.de/)
+- [Psyop](http://www.psyop.com/)
+- [Raynault VFX](https://www.raynault.com/)
+- [Rising Sun Pictures](https://rsp.com.au)
+- [Rodeo FX](https://www.rodeofx.com/en/)
+- [Sony Pictures Imageworks](http://www.imageworks.com/)
+- [Spin VFX](http://www.spinvfx.com/)
+- [Weta Digital](https://www.wetafx.co.nz/)
 
 Presented at Siggraph 2016, BOF!
 
@@ -423,6 +434,8 @@ Send us a pull-request with your project here.
 - [Kraken](https://github.com/fabric-engine/Kraken)
 - [AFANASY](http://cgru.info/afanasy/afanasy)
 - [Syncplay](https://github.com/Syncplay/syncplay)
+- [BlenderUpdater](https://github.com/overmindstudios/BlenderUpdater)
+- [QtPyConvert](https://github.com/DigitalDomain/QtPyConvert)
 
 <br>
 <br>
@@ -439,6 +452,7 @@ Comparison matrix.
 | [QtPy][]      | Scientific    | N/A               | MIT       |      | X         | X      |
 | [pyqode.qt][] | Scientific    | PyQt5             | MIT       | X    |           | X      |
 | [QtExt][]     | Film          | N/A               | N/A       |      | X         |        |
+| [python_qt_binding][] | Robotics | N/A            | BSD       | X    | X        | X       | X
 
 Also worth mentioning, [pyqt4topyqt5](https://github.com/rferrazz/pyqt4topyqt5); a good starting point for transitioning to Qt.py.
 
@@ -448,12 +462,15 @@ Send us a pull-request with your project here.
 [jupyter]: https://github.com/jupyter/qtconsole/blob/master/qtconsole/qt_loaders.py
 [pyqode.qt]: https://github.com/pyQode/pyqode.qt
 [QtExt]: https://bitbucket.org/ftrack/qtext
+[python_qt_binding]: https://github.com/ros-visualization/python_qt_binding
 
 <br>
 <br>
 <br>
 
 ### Developer Guide
+
+- [Chat with us](https://gitter.im/Qt-py/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Tests are performed on each aspect of the shim.
 
