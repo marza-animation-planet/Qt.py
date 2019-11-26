@@ -51,6 +51,18 @@ def captured_output():
         sys.stdout, sys.stderr = old_out, old_err
 
 
+def CustomWidget(parent=None):
+    """
+    Wrap CustomWidget class into a function to avoid global Qt import
+    """
+    from Qt import QtWidgets
+
+    class Widget(QtWidgets.QWidget):
+        pass
+
+    return Widget(parent)
+
+
 self = sys.modules[__name__]
 
 
@@ -197,6 +209,38 @@ qdockwidget_ui = u"""\
 """
 
 
+qcustomwidget_ui = u"""\
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>238</width>
+    <height>44</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="CustomWidget" name="customwidget">
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CustomWidget</class>
+   <extends>QWidget</extends>
+   <header>tests.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
+"""
+
+
 def setup():
     """Module-wide initialisation
 
@@ -216,6 +260,8 @@ def setup():
     self.ui_qmainwindow = saveUiFile("qmainwindow.ui", qmainwindow_ui)
     self.ui_qdialog = saveUiFile("qdialog.ui", qdialog_ui)
     self.ui_qdockwidget = saveUiFile("qdockwidget.ui", qdockwidget_ui)
+    self.ui_qcustomwidget = saveUiFile("qcustomwidget.ui", qcustomwidget_ui)
+
 
 def teardown():
     shutil.rmtree(self.tempdir)
@@ -346,6 +392,26 @@ def test_load_ui_dockwidget():
 
     assert hasattr(win, 'lineEdit'), \
         "loadUi could not load instance to main window"
+
+    app.exit()
+
+
+def test_load_ui_customwidget():
+    """Tests to see if loadUi loads a custom widget properly"""
+    import sys
+    from Qt import QtWidgets, QtCompat
+
+    app = QtWidgets.QApplication(sys.argv)
+    win = QtWidgets.QMainWindow()
+
+    QtCompat.loadUi(self.ui_qcustomwidget, win)
+
+    # Ensure that the derived class was properly created
+    # and not the base class (in case of failure)
+    custom_class_name = getattr(win, "customwidget", None).__class__.__name__
+    excepted_class_name = CustomWidget(win).__class__.__name__
+    assert custom_class_name == excepted_class_name, \
+        "loadUi could not load custom widget to main window"
 
     app.exit()
 
@@ -679,6 +745,11 @@ def test_qtcompat_base_class():
     QtCompat.QHeaderView.setSectionsMovable(header, True)
     assert QtCompat.QHeaderView.sectionsMovable(header) is True
 
+    # Verify that the grab function actually generates a non-null image
+    button = QtWidgets.QPushButton('TestImage')
+    pixmap = QtCompat.QWidget.grab(button)
+    assert not pixmap.isNull()
+
 
 def test_cli():
     """Qt.py is available from the command-line"""
@@ -777,6 +848,14 @@ if sys.version_info <= (3, 4):
 
         finally:
             app.exit()
+
+    def test_isValid():
+        """.isValid and .delete work in all bindings"""
+        from Qt import QtCompat, QtCore
+        obj = QtCore.QObject()
+        assert QtCompat.isValid(obj)
+        QtCompat.delete(obj)
+        assert not QtCompat.isValid(obj)
 
 
 if binding("PyQt4"):
