@@ -44,7 +44,7 @@ import shutil
 import importlib
 
 
-__version__ = "1.2.0.b3"
+__version__ = "1.2.3"
 
 # Enable support for `from Qt import *`
 __all__ = []
@@ -679,6 +679,22 @@ _common_members = {
     ]
 }
 
+""" Missing members
+
+This mapping describes members that have been deprecated
+in one or more bindings and have been left out of the
+_common_members mapping.
+
+The member can provide an extra details string to be
+included in exceptions and warnings.
+"""
+
+_missing_members = {
+    "QtGui": {
+        "QMatrix": "Deprecated in PyQt5",
+    },
+}
+
 
 def _qInstallMessageHandler(handler):
     """Install a message handler that works in all bindings
@@ -776,6 +792,32 @@ def _wrapinstance(ptr, base=None):
             base = Qt.QtCore.QObject
 
     return func(long(ptr), base)
+
+
+def _isvalid(object):
+    """Check if the object is valid to use in Python runtime.
+
+    Usage:
+        See :func:`QtCompat.isValid()`
+
+    Arguments:
+        object (QObject): QObject to check the validity of.
+
+    """
+
+    assert isinstance(object, Qt.QtCore.QObject)
+
+    if hasattr(Qt, "_shiboken2"):
+        return getattr(Qt, "_shiboken2").isValid(object)
+
+    elif hasattr(Qt, "_shiboken"):
+        return getattr(Qt, "_shiboken").isValid(object)
+
+    elif hasattr(Qt, "_sip"):
+        return not getattr(Qt, "_sip").isdeleted(object)
+
+    else:
+        raise AttributeError("'module' has no attribute isValid")
 
 
 def _translate(context, sourceText, *args):
@@ -968,6 +1010,7 @@ _misplaced_members = {
         "QtUiTools.QUiLoader": ["QtCompat.loadUi", _loadUi],
         "shiboken2.wrapInstance": ["QtCompat.wrapInstance", _wrapinstance],
         "shiboken2.getCppPointer": ["QtCompat.getCppPointer", _getcpppointer],
+        "shiboken2.isValid": ["QtCompat.isValid", _isvalid],
         "QtWidgets.qApp": "QtWidgets.QApplication.instance()",
         "QtCore.QCoreApplication.translate": [
             "QtCompat.translate", _translate
@@ -978,6 +1021,7 @@ _misplaced_members = {
         "QtCore.qInstallMessageHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtWidgets.QStyleOptionViewItem": "QtCompat.QStyleOptionViewItemV4",
     },
     "PyQt5": {
         "QtCore.pyqtProperty": "QtCore.Property",
@@ -992,6 +1036,7 @@ _misplaced_members = {
         "uic.loadUi": ["QtCompat.loadUi", _loadUi],
         "sip.wrapinstance": ["QtCompat.wrapInstance", _wrapinstance],
         "sip.unwrapinstance": ["QtCompat.getCppPointer", _getcpppointer],
+        "sip.isdeleted": ["QtCompat.isValid", _isvalid],
         "QtWidgets.qApp": "QtWidgets.QApplication.instance()",
         "QtCore.QCoreApplication.translate": [
             "QtCompat.translate", _translate
@@ -1002,6 +1047,7 @@ _misplaced_members = {
         "QtCore.qInstallMessageHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtWidgets.QStyleOptionViewItem": "QtCompat.QStyleOptionViewItemV4",
     },
     "PySide": {
         "QtGui.QAbstractProxyModel": "QtCore.QAbstractProxyModel",
@@ -1024,6 +1070,7 @@ _misplaced_members = {
         "QtUiTools.QUiLoader": ["QtCompat.loadUi", _loadUi],
         "shiboken.wrapInstance": ["QtCompat.wrapInstance", _wrapinstance],
         "shiboken.unwrapInstance": ["QtCompat.getCppPointer", _getcpppointer],
+        "shiboken.isValid": ["QtCompat.isValid", _isvalid],
         "QtGui.qApp": "QtWidgets.QApplication.instance()",
         "QtCore.QCoreApplication.translate": [
             "QtCompat.translate", _translate
@@ -1034,6 +1081,7 @@ _misplaced_members = {
         "QtCore.qInstallMsgHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtGui.QStyleOptionViewItemV4": "QtCompat.QStyleOptionViewItemV4",
     },
     "PyQt4": {
         "QtGui.QAbstractProxyModel": "QtCore.QAbstractProxyModel",
@@ -1057,6 +1105,7 @@ _misplaced_members = {
         "uic.loadUi": ["QtCompat.loadUi", _loadUi],
         "sip.wrapinstance": ["QtCompat.wrapInstance", _wrapinstance],
         "sip.unwrapinstance": ["QtCompat.getCppPointer", _getcpppointer],
+        "sip.isdeleted": ["QtCompat.isValid", _isvalid],
         "QtCore.QString": "str",
         "QtGui.qApp": "QtWidgets.QApplication.instance()",
         "QtCore.QCoreApplication.translate": [
@@ -1068,6 +1117,7 @@ _misplaced_members = {
         "QtCore.qInstallMsgHandler": [
             "QtCompat.qInstallMessageHandler", _qInstallMessageHandler
         ],
+        "QtGui.QStyleOptionViewItemV4": "QtCompat.QStyleOptionViewItemV4",
     }
 }
 
@@ -1391,6 +1441,10 @@ def _pyside2():
 
     if hasattr(Qt, "_QtCore"):
         Qt.__qt_version__ = Qt._QtCore.qVersion()
+        Qt.QtCompat.dataChanged = (
+            lambda self, topleft, bottomright, roles=None:
+            self.dataChanged.emit(topleft, bottomright, roles or [])
+        )
 
     if hasattr(Qt, "_QtWidgets"):
         Qt.QtCompat.setSectionResizeMode = \
@@ -1438,6 +1492,10 @@ def _pyside():
 
     if hasattr(Qt, "_QtCore"):
         Qt.__qt_version__ = Qt._QtCore.qVersion()
+        Qt.QtCompat.dataChanged = (
+            lambda self, topleft, bottomright, roles=None:
+            self.dataChanged.emit(topleft, bottomright)
+        )
 
     _reassign_misplaced_members("PySide")
     _build_compatibility_members("PySide")
@@ -1448,11 +1506,18 @@ def _pyqt5():
 
     import PyQt5 as module
     extras = ["uic"]
+
     try:
         import sip
-        extras.append(sip.__name__)
+        extras += ["sip"]
     except ImportError:
-        sip = None
+
+        # Relevant to PyQt5 5.11 and above
+        try:
+            from PyQt5 import sip
+            extras += ["sip"]
+        except ImportError:
+            sip = None
 
     _setup(module, extras)
     if hasattr(Qt, "_sip"):
@@ -1466,6 +1531,10 @@ def _pyqt5():
     if hasattr(Qt, "_QtCore"):
         Qt.__binding_version__ = Qt._QtCore.PYQT_VERSION_STR
         Qt.__qt_version__ = Qt._QtCore.QT_VERSION_STR
+        Qt.QtCompat.dataChanged = (
+            lambda self, topleft, bottomright, roles=None:
+            self.dataChanged.emit(topleft, bottomright, roles or [])
+        )
 
     if hasattr(Qt, "_QtWidgets"):
         Qt.QtCompat.setSectionResizeMode = \
@@ -1542,6 +1611,10 @@ def _pyqt4():
     if hasattr(Qt, "_QtCore"):
         Qt.__binding_version__ = Qt._QtCore.PYQT_VERSION_STR
         Qt.__qt_version__ = Qt._QtCore.QT_VERSION_STR
+        Qt.QtCompat.dataChanged = (
+            lambda self, topleft, bottomright, roles=None:
+            self.dataChanged.emit(topleft, bottomright)
+        )
 
     _reassign_misplaced_members("PyQt4")
 
@@ -1677,6 +1750,36 @@ def _cli(args):
         sys.stdout.write("Successfully converted \"%s\"\n" % args.convert)
 
 
+class MissingMember(object):
+    """
+    A placeholder type for a missing Qt object not
+    included in Qt.py
+
+    Args:
+        name (str): The name of the missing type
+        details (str): An optional custom error message
+    """
+    ERR_TMPL = ("{} is not a common object across PySide2 "
+                "and the other Qt bindings. It is not included "
+                "as a common member in the Qt.py layer")
+
+    def __init__(self, name, details=''):
+        self.__name = name
+        self.__err = self.ERR_TMPL.format(name)
+
+        if details:
+            self.__err = "{}: {}".format(self.__err, details)
+
+    def __repr__(self):
+        return "<{}: {}>".format(self.__class__.__name__, self.__name)
+
+    def __getattr__(self, name):
+        raise NotImplementedError(self.__err)
+
+    def __call__(self, *a, **kw):
+        raise NotImplementedError(self.__err)
+
+
 def _install():
     # Default order (customise order and content via QT_PREFERRED_BINDING)
     default_order = ("PySide2", "PyQt5", "PySide", "PyQt4")
@@ -1749,6 +1852,22 @@ def _install():
                 continue
 
             setattr(our_submodule, member, their_member)
+
+    # Install missing member placeholders
+    for name, members in _missing_members.items():
+        our_submodule = getattr(Qt, name)
+
+        for member in members:
+
+            # If the submodule already has this member installed,
+            # either by the common members, or the site config,
+            # then skip installing this one over it.
+            if hasattr(our_submodule, member):
+                continue
+
+            placeholder = MissingMember("{}.{}".format(name, member),
+                                        details=members[member])
+            setattr(our_submodule, member, placeholder)
 
     # Enable direct import of QtCompat
     sys.modules['Qt.QtCompat'] = Qt.QtCompat
